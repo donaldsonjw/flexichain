@@ -1,0 +1,145 @@
+* flexichain Readme
+:PROPERTIES:
+:CUSTOM_ID: flexichain-readme
+:END:
+** Description
+:PROPERTIES:
+:CUSTOM_ID: description
+:END:
+flexichain is a flexible sequence data structure for Bigloo scheme, ported from the original Common Lisp implementation by Robert Strandh and Matthieu Villeneuve. It provides efficient insertion and deletion operations at arbitrary positions in a sequence, making it ideal for applications like text editors, syntax analyzers, and other scenarios requiring frequent sequence modifications.
+
+The key advantages of flexichain over traditional vectors or lists are:
+- *Efficient insertion/deletion*: O(1) amortized time for insertions and deletions at arbitrary positions
+- *Gap buffer implementation*: Uses a gap buffer internally for optimal performance
+- *Cursor support*: Provides cursors that maintain their position even as the sequence is modified
+- *Ranked elements*: Optional support for elements that know their position in the sequence
+
+** Core Components
+:PROPERTIES:
+:CUSTOM_ID: core-components
+:END:
+flexichain provides the following main components:
+
+*** Core API
+- =<flexichain>= - Abstract base class for flexible sequences
+- =<gapbuffer>= - Concrete gap buffer implementation
+- Basic operations: =flexi-insert!=, =flexi-delete!=, =flexi-ref=, =flexi-set!=
+- Bulk operations: =flexi-insert-vector!=, =flexi-delete-items!=
+- Utility operations: =flexi-length=, =flexi-empty?=, =flexi-rotate!=
+
+*** Cursor Support
+- =<flexicursor>= - Base cursor class
+- =<left-sticky-flexicursor>= - Cursor that sticks left during insertions
+- =<right-sticky-flexicursor>= - Cursor that sticks right during insertions
+- =<cursorchain>= - Flexichain with automatic cursor management
+
+*** Ranked Elements
+- =<element-rank-mixin>= - Mixin for position-aware elements
+- =<ranked-gapbuffer>= - Gapbuffer with automatic rank management
+- Navigation methods: =flexi-next=, =flexi-prev=, =flexi-first?=, =flexi-last?=
+
+*** Error Handling
+- =&flexi-position-error= - Invalid position errors
+- =&flexi-initialization-error= - Construction errors
+- =&flexi-incompatible-type-error= - Type mismatch errors
+
+** Building
+:PROPERTIES:
+:CUSTOM_ID: building
+:END:
+Both the Bigloo native and jvm backends are supported. To build, execute:
+#+begin_src shell
+./configure --prefix=<installation path prefix>; make 
+#+end_src 
+where =<installation path prefix>= is the desired installation path
+prefix (e.g, =/usr/local=). You usually want the path prefix to match
+that used by Bigloo itself.
+
+** Installation 
+:PROPERTIES:
+:CUSTOM_ID: installation
+:END:
+To install the library, execute:
+#+begin_src shell
+make install
+#+end_src 
+
+** Tests
+:PROPERTIES:
+:CUSTOM_ID: tests
+:END:
+To run the test suite, execute:
+#+begin_src shell
+make test
+#+end_src
+
+** Documentation
+:PROPERTIES:
+:CUSTOM_ID: documentation
+:END:
+Comprehensive documentation is available in multiple formats:
+- [[file:manual/flexichain.info][Info format]] (=manual/flexichain.info=)
+- [[file:manual/flexichain_html/index.html][HTML format]] (=manual/flexichain_html/index.html=)
+- [[file:manual/flexichain.pdf][PDF format]] (manual/flexichain.pdf)
+
+To build the documentation:
+
+#+begin_src shell
+make manual        # Build HTML and PDF
+make manual-html   # Build HTML only
+make manual-pdf    # Build PDF only
+#+end_src
+
+** Quick Start
+:PROPERTIES:
+:CUSTOM_ID: quick-start
+:END:
+#+begin_src scheme
+(module test   
+  (library flexichain))
+
+  ;; Create a new flexichain
+  (define chain (make-gapbuffer))
+
+  ;; Insert elements
+  (flexi-insert! chain 0 "hello")
+  (flexi-insert! chain 1 "world")
+
+  ;; Access elements
+  (flexi-ref chain 0)  ; => "hello"
+  (flexi-length chain) ; => 2
+
+  ;; Delete elements
+  (flexi-delete! chain 0)
+#+end_src
+
+** Performance
+:PROPERTIES:
+:CUSTOM_ID: performance
+:END:
+flexichain is optimized for scenarios with frequent insertions and deletions at varying positions:
+- O(1) amortized insertion/deletion at the gap position
+- O(1) random access to elements
+- Automatic gap repositioning for optimal performance
+- Memory-efficient single buffer storage
+
+** Use Cases
+:PROPERTIES:
+:CUSTOM_ID: use-cases
+:END:
+flexichain is ideal for:
+- Text editors and word processors
+- Syntax analyzers and parsers
+- Document object models  
+- Undo/redo systems
+- Interactive sequence manipulation
+
+** License
+:PROPERTIES:
+:CUSTOM_ID: license
+:END:
+This library is released under the GNU Lesser General Public License v3.0. See =COPYING.LESSER= for details.
+
+Based on the original Common Lisp Flexichain library:
+- Copyright (C) 2003-2004 Robert Strandh and Matthieu Villeneuve
+- Bigloo port Copyright (C) 2024 Joseph Donaldson

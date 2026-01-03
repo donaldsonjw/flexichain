@@ -1,0 +1,308 @@
+@node Text Editor Example, Syntax Analyzer Example, Examples, Examples
+@comment  node-name,  next,  previous,  up
+@section Text Editor Example
+@cindex Text Editor Example
+
+This example demonstrates how to use flexichain to implement a simple text editor with efficient insertion and deletion operations.
+
+@lisp
+(module text-editor-example (library flexichain))
+
+;; Simple text editor using flexichain
+(define-class <text-editor>
+   buffer::<cursorchain>
+   cursor::<flexicursor>)
+
+(define (make-text-editor)
+   (let* ((buffer (make-cursorchain))
+          (cursor (make-cursorchain-left-cursor buffer :position 0)))
+      (instantiate::<text-editor> (buffer buffer) (cursor cursor))))
+
+;; Insert text at cursor position
+(define (editor-insert! editor::text-editor text::string)
+   (with-access::<text-editor> editor (cursor)
+      (cursor-insert! cursor text)
+      (cursor-move> cursor 0)))  ; Move cursor after inserted text
+
+;; Delete character before cursor (backspace)
+(define (editor-backspace! editor::text-editor)
+   (with-access::<text-editor> editor (cursor)
+      (unless (cursor-at-beginning? cursor)
+         (cursor-delete<! cursor 1))))
+
+;; Delete character after cursor (delete)
+(define (editor-delete! editor::text-editor)
+   (with-access::<text-editor> editor (cursor)
+      (unless (cursor-at-end? cursor)
+         (cursor-delete>! cursor 1))))
+
+;; Move cursor left
+(define (editor-move-left! editor::text-editor)
+   (with-access::<text-editor> editor (cursor)
+      (unless (cursor-at-beginning? cursor)
+         (cursor-move< cursor 1))))
+
+;; Move cursor right  
+(define (editor-move-right! editor::text-editor)
+   (with-access::<text-editor> editor (cursor)
+      (unless (cursor-at-end? cursor)
+         (cursor-move> cursor 1))))
+
+;; Get current cursor position
+(define (editor-cursor-position editor::text-editor)
+   (with-access::<text-editor> editor (cursor)
+      (cursor-pos cursor)))
+
+;; Get text length
+(define (editor-length editor::text-editor)
+   (with-access::<text-editor> editor (buffer)
+      (flexi-length buffer)))
+
+;; Get character at position
+(define (editor-char-at editor::text-editor position::long)
+   (with-access::<text-editor> editor (buffer)
+      (flexi-ref buffer position)))
+
+;; Example usage
+(define editor (make-text-editor))
+
+;; Type some text
+(editor-insert! editor "H")
+(editor-insert! editor "e")
+(editor-insert! editor "l")
+(editor-insert! editor "l")
+(editor-insert! editor "o")
+
+;; Current state: "Hello" with cursor at end
+(editor-length editor)          ; => 5
+(editor-cursor-position editor) ; => 5
+
+;; Move cursor and insert
+(editor-move-left! editor)      ; Cursor at position 4
+(editor-move-left! editor)      ; Cursor at position 3  
+(editor-insert! editor " ")     ; Insert space
+(editor-insert! editor "W")
+(editor-insert! editor "o")
+(editor-insert! editor "r")
+(editor-insert! editor "l")
+(editor-insert! editor "d")
+
+;; Current state: "Hel World" with cursor after "d"
+;; Move to end and add exclamation
+(while (not (cursor-at-end? (-> editor cursor)))
+   (editor-move-right! editor))
+(editor-insert! editor "!")
+
+;; Final state: "Hel World!"
+@end lisp
+
+@node Syntax Analyzer Example, Performance Comparison, Text Editor Example, Examples
+@comment  node-name,  next,  previous,  up
+@section Syntax Analyzer Example
+@cindex Syntax Analyzer Example
+
+This example shows how to use ranked flexichains for syntax analysis where tokens need to know their position in the source.
+
+@lisp
+(module syntax-analyzer-example (library flexichain))
+
+;; Define token types with position awareness
+(define-class <token>::<element-rank-mixin>
+   type::symbol
+   value::string
+   line::long
+   column::long)
+
+(define-class <syntax-analyzer>
+   tokens::<ranked-gapbuffer>
+   current-token::<token>)
+
+(define (make-syntax-analyzer)
+   (instantiate::<syntax-analyzer> 
+      (tokens (make-ranked-gapbuffer))
+      (current-token #f)))
+
+;; Add a token to the analyzer
+(define (analyzer-add-token! analyzer::syntax-analyzer 
+                            type::symbol value::string 
+                            line::long column::long)
+   (with-access::<syntax-analyzer> analyzer (tokens)
+      (let* ((position (flexi-length tokens))
+             (token (instantiate::<token> 
+                      (type type)
+                      (value value) 
+                      (line line)
+                      (column column)
+                      (index position)
+                      (chain tokens))))
+         (flexi-insert! tokens position token)
+         token)))
+
+;; Get token at specific position
+(define (analyzer-token-at analyzer::syntax-analyzer position::long)
+   (with-access::<syntax-analyzer> analyzer (tokens)
+      (flexi-ref tokens position)))
+
+;; Navigate tokens using rank methods
+(define (token-next token::<token>)
+   (flexi-next token))
+
+(define (token-prev token::<token>)
+   (flexi-prev token))
+
+(define (token-is-first? token::<token>)
+   (flexi-first? token))
+
+(define (token-is-last? token::<token>)
+   (flexi-last? token))
+
+;; Example: Simple expression parser
+(define (parse-expression analyzer::syntax-analyzer)
+   (with-access::<syntax-analyzer> analyzer (tokens current-token)
+      (when (> (flexi-length tokens) 0)
+         (set! current-token (flexi-ref tokens 0))
+         (parse-term analyzer))))
+
+(define (parse-term analyzer::syntax-analyzer)
+   (with-access::<syntax-analyzer> analyzer (current-token)
+      (when current-token
+         (case (-> current-token type)
+            ((number)
+             (let ((value (-> current-token value)))
+                (unless (token-is-last? current-token)
+                   (set! current-token (token-next current-token)))
+                (string->number value)))
+            ((identifier)
+             (let ((name (-> current-token value)))
+                (unless (token-is-last? current-token)
+                   (set! current-token (token-next current-token)))
+                name))
+            (else
+             (error "parse-term" "unexpected token" current-token))))))
+
+;; Example usage
+(define analyzer (make-syntax-analyzer))
+
+;; Add tokens for expression "x + 42"
+(analyzer-add-token! analyzer 'identifier "x" 1 1)
+(analyzer-add-token! analyzer 'operator "+" 1 3)  
+(analyzer-add-token! analyzer 'number "42" 1 5)
+
+;; Navigate through tokens
+(define first-token (analyzer-token-at analyzer 0))
+(define second-token (token-next first-token))
+(define third-token (token-next second-token))
+
+;; Check positions
+(rank first-token)  ; => 0
+(rank second-token) ; => 1  
+(rank third-token)  ; => 2
+
+;; Parse the expression
+(parse-expression analyzer) ; => x (first identifier)
+@end lisp
+
+@node Performance Comparison, , Syntax Analyzer Example, Examples
+@comment  node-name,  next,  previous,  up
+@section Performance Comparison
+@cindex Performance Comparison
+
+This section compares flexichain performance with other sequence data structures for common operations.
+
+@subsection Insertion Performance
+
+@lisp
+(module performance-comparison (library flexichain))
+
+;; Compare insertion at beginning
+(define (benchmark-insertions n)
+   ;; Flexichain (gap buffer)
+   (let ((chain (make-gapbuffer))
+         (start-time (current-time)))
+      (do ((i 0 (+ i 1)))
+          ((= i n))
+          (flexi-insert! chain 0 i))
+      (let ((flexi-time (- (current-time) start-time)))
+         
+         ;; Vector (for comparison)
+         (set! start-time (current-time))
+         (let ((vec (make-vector 0)))
+            (do ((i 0 (+ i 1)))
+                ((= i n))
+                ;; Simulate vector insertion (expensive)
+                (let ((new-vec (make-vector (+ i 1))))
+                   (vector-copy! new-vec 1 vec 0 i)
+                   (vector-set! new-vec 0 i)
+                   (set! vec new-vec))))
+         (let ((vector-time (- (current-time) start-time)))
+            
+            ;; List (for comparison)  
+            (set! start-time (current-time))
+            (let ((lst '()))
+               (do ((i 0 (+ i 1)))
+                   ((= i n))
+                   (set! lst (cons i lst))))
+            (let ((list-time (- (current-time) start-time)))
+               
+               (print "Insertions for " n " elements:")
+               (print "  Flexichain: " flexi-time "ms")
+               (print "  Vector:     " vector-time "ms") 
+               (print "  List:       " list-time "ms")))))
+
+;; Run benchmark
+(benchmark-insertions 1000)
+@end lisp
+
+@subsection Expected Performance Characteristics
+
+@table @strong
+@item Flexichain (Gap Buffer)
+@itemize @bullet
+@item Insertion/deletion at gap: O(1) amortized
+@item Insertion/deletion elsewhere: O(n) worst case, but gap moves to frequently accessed positions
+@item Random access: O(1)
+@item Memory overhead: Low, single contiguous buffer
+@end itemize
+
+@item Vector
+@itemize @bullet  
+@item Insertion/deletion at end: O(1) amortized
+@item Insertion/deletion elsewhere: O(n) always
+@item Random access: O(1)
+@item Memory overhead: Low
+@end itemize
+
+@item List
+@itemize @bullet
+@item Insertion/deletion at head: O(1)
+@item Insertion/deletion elsewhere: O(n) to find position
+@item Random access: O(n)
+@item Memory overhead: High due to pointer storage
+@end itemize
+@end table
+
+@subsection When to Use Flexichain
+
+Flexichain is ideal when you need:
+
+@itemize @bullet
+@item
+Frequent insertions and deletions at varying positions
+@item
+Random access to elements by position
+@item
+Cursor-based editing operations
+@item
+Position-aware elements (ranked flexichains)
+@item
+Memory-efficient sequence storage
+@end itemize
+
+Common use cases include:
+@itemize @bullet
+@item Text editors and word processors
+@item Syntax analyzers and parsers  
+@item Document object models
+@item Undo/redo systems
+@item Interactive sequence manipulation
+@end itemize

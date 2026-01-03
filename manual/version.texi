@@ -1,0 +1,4 @@
+@c -- Version and date --------------------------------------------- @c
+@set flexichainvers 0.9
+@set flexichaindate January 2026
+@set update-month January

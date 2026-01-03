@@ -1,0 +1,12 @@
+@initial {&}
+@entry{@code {&flexi-incompatible-type-error}}{6}
+@entry{@code {&flexi-initialization-error}}{6}
+@entry{@code {&flexi-position-error}}{6}
+@initial {<}
+@entry{@code {<cursor>}}{7}
+@entry{@code {<cursorchain>}}{9}
+@entry{@code {<element-rank-mixin>}}{11}
+@entry{@code {<flexicursor>}}{7}
+@entry{@code {<left-sticky-flexicursor>}}{7}
+@entry{@code {<ranked-gapbuffer>}}{12}
+@entry{@code {<right-sticky-flexicursor>}}{7}

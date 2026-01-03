@@ -1,0 +1,216 @@
+\input texinfo    @c -*-texinfo-*-
+@setfilename flexichain.info
+
+@c ------------------------------------------------------------------- @c
+@c    The version                                                      @c
+@c ------------------------------------------------------------------- @c
+@include version.texi
+
+@settitle flexichain @value{flexichainvers}
+@syncodeindex vr cp
+@syncodeindex pg cp
+@syncodeindex fn cp
+@value{flexichainvers}
+
+@footnotestyle separate
+@ifinfo
+@paragraphindent 2
+@end ifinfo
+@finalout
+@comment %**end of header
+
+@ifinfo
+This file documents flexichain, a flexible sequence data structure for Bigloo scheme.
+
+Copyright (C) 2024 Joseph Donaldson
+
+@display
+flexichain is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+flexichain is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with flexichain.  If not, see
+<http://www.gnu.org/licenses/>.
+@end display
+@end ifinfo
+
+@c ------------------------------------------------------------------- @c
+@c    The title page                                                   @c
+@c ------------------------------------------------------------------- @c
+@setchapternewpage odd
+
+@titlepage
+@title flexichain
+@subtitle A Flexible Sequence Data Structure for Bigloo scheme
+@subtitle User manual for version @value{flexichainvers}
+@subtitle January 2026
+
+@author Joseph Donaldson
+
+@page
+@vskip 0pt plus 1filll
+
+Copyright @copyright{} 2024 Joseph Donaldson
+
+@display
+flexichain is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+flexichain is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with flexichain.  If not, see
+<http://www.gnu.org/licenses/>.
+@end display
+
+@sp 2
+Based on the original Common Lisp Flexichain library by Robert Strandh and Matthieu Villeneuve.
+@end titlepage
+
+@c ------------------------------------------------------------------- @c
+@c    Dir entry                                                        @c
+@c ------------------------------------------------------------------- @c
+@ifinfo
+@dircategory Flexichain sequence data structure
+@direntry
+* flexichain: (flexichain).       Flexichain sequence data structure for Bigloo scheme.
+@end direntry
+@end ifinfo
+
+@c ------------------------------------------------------------------- @c
+@c    The main menu                                                    @c
+@c ------------------------------------------------------------------- @c
+@node Top, Overview, (dir), (dir)
+@cindex flexichain
+
+@menu
+* Overview::
+* Core API::
+* Cursors::
+* Ranked Elements::
+* Examples::
+* Global Index::
+@end menu
+
+@node Overview, Core API, Top, Top
+@comment  node-name,  next,  previous,  up
+@chapter Overview of flexichain
+@cindex Overview of flexichain
+
+flexichain is a flexible sequence data structure for Bigloo scheme, ported from the original Common Lisp implementation by Robert Strandh and Matthieu Villeneuve. It provides efficient insertion and deletion operations at arbitrary positions in a sequence, making it ideal for applications like text editors, syntax analyzers, and other scenarios requiring frequent sequence modifications.
+
+The key advantages of flexichain over traditional vectors or lists are:
+
+@itemize @bullet
+@item
+@strong{Efficient insertion/deletion}: O(1) amortized time for insertions and deletions at arbitrary positions
+@item
+@strong{Gap buffer implementation}: Uses a gap buffer internally for optimal performance
+@item
+@strong{Cursor support}: Provides cursors that maintain their position even as the sequence is modified
+@item
+@strong{Ranked elements}: Optional support for elements that know their position in the sequence
+@item
+@strong{Type safety}: Full integration with Bigloo's type system and error handling
+@end itemize
+
+@section Basic Usage
+
+@lisp
+(module example-basic-usage (library flexichain))
+
+;; Create a new flexichain
+(define chain (make-gapbuffer))
+
+;; Insert elements
+(flexi-insert! chain 0 "hello")
+(flexi-insert! chain 1 "world")
+
+;; Access elements
+(flexi-ref chain 0)  ; => "hello"
+(flexi-length chain) ; => 2
+
+;; Delete elements
+(flexi-delete! chain 0)
+@end lisp
+
+@node Core API, Cursors, Overview, Top
+@comment  node-name,  next,  previous,  up
+@chapter Core API
+@cindex Core API
+
+@menu
+* Basic Operations::
+* Construction::
+* Error Handling::
+@end menu
+
+@include core-api.texi
+
+@node Cursors, Ranked Elements, Core API, Top
+@comment  node-name,  next,  previous,  up
+@chapter Cursors
+@cindex Cursors
+
+@menu
+* Cursor Types::
+* Cursor Operations::
+* Cursor Chains::
+@end menu
+
+@include cursors.texi
+
+@node Ranked Elements, Examples, Cursors, Top
+@comment  node-name,  next,  previous,  up
+@chapter Ranked Elements
+@cindex Ranked Elements
+
+@menu
+* Element Rank Mixin::
+* Ranked Gapbuffer::
+* Navigation Methods::
+@end menu
+
+@include ranked-elements.texi
+
+@node Examples, Global Index, Ranked Elements, Top
+@comment  node-name,  next,  previous,  up
+@chapter Examples
+@cindex Examples
+
+@menu
+* Text Editor Example::
+* Syntax Analyzer Example::
+* Performance Comparison::
+@end menu
+
+@include examples.texi
+
+@node Global Index, , Examples, Top
+@comment  node-name,  next,  previous,  up
+@chapter Global Index
+
+@printindex cp
+
+@c ------------------------------------------------------------------- @c
+@c    Bye                                                              @c
+@c ------------------------------------------------------------------- @c
+@iftex
+@chapter Table of contents
+@contents
+@summarycontents
+@end iftex
+ 
+@bye

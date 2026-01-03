@@ -1,0 +1,221 @@
+@node Basic Operations, Construction, Core API, Core API
+@comment  node-name,  next,  previous,  up
+@section Basic Operations
+@cindex Basic Operations
+
+The core flexichain API provides fundamental operations for sequence manipulation.
+
+@subsection Length and Access
+
+@deffn {Generic Function} flexi-length chain
+Returns the number of elements in @var{chain}.
+
+@lisp
+(module example-basic-ops (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "a")
+(flexi-insert! chain 1 "b")
+(flexi-length chain) ; => 2
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-empty? chain
+Returns @code{#t} if @var{chain} contains no elements, @code{#f} otherwise.
+
+@lisp
+(module example-empty-check (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-empty? chain) ; => #t
+(flexi-insert! chain 0 "item")
+(flexi-empty? chain) ; => #f
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-ref chain position
+Returns the element at @var{position} in @var{chain}. Positions are zero-indexed.
+
+@lisp
+(module example-ref (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "first")
+(flexi-insert! chain 1 "second")
+(flexi-ref chain 0) ; => "first"
+(flexi-ref chain 1) ; => "second"
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-set! chain position item
+Sets the element at @var{position} in @var{chain} to @var{item}.
+
+@lisp
+(module example-set (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "old")
+(flexi-set! chain 0 "new")
+(flexi-ref chain 0) ; => "new"
+@end lisp
+@end deffn
+
+@subsection Insertion Operations
+
+@deffn {Generic Function} flexi-insert! chain position item
+Inserts @var{item} at @var{position} in @var{chain}. All elements at or after @var{position} are shifted right.
+
+@lisp
+(module example-insert (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "a")
+(flexi-insert! chain 1 "c")
+(flexi-insert! chain 1 "b")  ; Insert between "a" and "c"
+;; chain now contains: "a" "b" "c"
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-insert-vector! chain position vector
+Inserts all elements from @var{vector} starting at @var{position} in @var{chain}.
+
+@lisp
+(module example-insert-vector (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "start")
+(flexi-insert-vector! chain 1 #("middle1" "middle2"))
+(flexi-insert! chain 3 "end")
+;; chain now contains: "start" "middle1" "middle2" "end"
+@end lisp
+@end deffn
+
+@subsection Deletion Operations
+
+@deffn {Generic Function} flexi-delete! chain position
+Removes the element at @var{position} from @var{chain}. All elements after @var{position} are shifted left.
+
+@lisp
+(module example-delete (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "a")
+(flexi-insert! chain 1 "b")
+(flexi-insert! chain 2 "c")
+(flexi-delete! chain 1)  ; Remove "b"
+;; chain now contains: "a" "c"
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-delete-items! chain position count
+Removes @var{count} elements starting at @var{position} from @var{chain}.
+
+@lisp
+(module example-delete-items (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert-vector! chain 0 #("a" "b" "c" "d" "e"))
+(flexi-delete-items! chain 1 3)  ; Remove "b", "c", "d"
+;; chain now contains: "a" "e"
+@end lisp
+@end deffn
+
+@subsection Rotation Operations
+
+@deffn {Generic Function} flexi-rotate! chain n
+Rotates the elements in @var{chain} by @var{n} positions. Positive values rotate right, negative values rotate left.
+
+@lisp
+(module example-rotate (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert-vector! chain 0 #("a" "b" "c" "d"))
+(flexi-rotate! chain 1)  ; Rotate right by 1
+;; chain now contains: "d" "a" "b" "c"
+@end lisp
+@end deffn
+
+@node Construction, Error Handling, Basic Operations, Core API
+@comment  node-name,  next,  previous,  up
+@section Construction
+@cindex Construction
+
+@deffn {Function} make-gapbuffer @t{#!key} (initial-capacity 0) (fill #\_) (min-capacity 5) (expand-factor 1.5)
+Creates a new gapbuffer-based flexichain.
+
+@table @var
+@item initial-capacity
+Initial capacity of the internal buffer (default: 0)
+@item fill
+Fill element for unused buffer positions (default: #\_)
+@item min-capacity
+Minimum buffer capacity (default: 5)
+@item expand-factor
+Factor by which buffer grows when full (default: 1.5)
+@end table
+
+@lisp
+(module example-construction (library flexichain))
+
+;; Create with defaults
+(define chain1 (make-gapbuffer))
+
+;; Create with custom parameters
+(define chain2 (make-gapbuffer :initial-capacity 100 
+                               :expand-factor 2.0))
+@end lisp
+@end deffn
+
+@deffn {Function} list->gapbuffer list
+Creates a new gapbuffer containing the elements from @var{list}.
+
+@lisp
+(module example-list-conversion (library flexichain))
+
+(define chain (list->gapbuffer '("a" "b" "c")))
+(flexi-length chain) ; => 3
+(flexi-ref chain 1)  ; => "b"
+@end lisp
+@end deffn
+
+@node Error Handling, , Construction, Core API
+@comment  node-name,  next,  previous,  up
+@section Error Handling
+@cindex Error Handling
+
+flexichain provides specific error types for different failure conditions.
+
+@deftp {Exception} &flexi-position-error
+Raised when an invalid position is accessed or specified.
+
+@lisp
+(module example-position-error (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "item")
+;; This will raise &flexi-position-error:
+(flexi-ref chain 5)
+@end lisp
+@end deftp
+
+@deftp {Exception} &flexi-initialization-error
+Raised when flexichain construction fails due to invalid parameters.
+
+@lisp
+(module example-init-error (library flexichain))
+
+;; This will raise &flexi-initialization-error:
+(make-gapbuffer :min-capacity -1)
+@end lisp
+@end deftp
+
+@deftp {Exception} &flexi-incompatible-type-error
+Raised when an operation receives an incompatible type.
+
+@lisp
+(module example-type-error (library flexichain))
+
+;; This will raise &flexi-incompatible-type-error:
+(flexi-insert-vector! chain 0 "not-a-vector")
+@end lisp
+@end deftp

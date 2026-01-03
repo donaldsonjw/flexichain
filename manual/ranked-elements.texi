@@ -1,0 +1,181 @@
+@node Element Rank Mixin, Ranked Gapbuffer, Ranked Elements, Ranked Elements
+@comment  node-name,  next,  previous,  up
+@section Element Rank Mixin
+@cindex Element Rank Mixin
+
+Ranked elements are objects that know their position within a flexichain. This is useful for applications like text editors where elements need to track their location.
+
+@deftp {Abstract Class} <element-rank-mixin>
+A mixin class that provides rank (position) awareness to elements.
+
+@table @var
+@item index
+Internal index within the flexichain (managed automatically)
+@item chain
+Reference to the containing flexichain
+@end table
+
+@lisp
+(module example-ranked-element (library flexichain))
+
+;; Define a ranked element type
+(define-class <text-element>::<element-rank-mixin>
+   content::string)
+
+;; Create elements
+(define elem1 (instantiate::<text-element> 
+                (content "hello")
+                (index 0)
+                (chain ranked-chain)))
+@end lisp
+@end deftp
+
+@subsection Rank Operations
+
+@deffn {Generic Function} rank element
+Returns the current position of @var{element} within its flexichain.
+
+@lisp
+(module example-rank (library flexichain))
+
+(rank elem1) ; => 0 (first position)
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-first? element
+Returns @code{#t} if @var{element} is at the first position in its flexichain.
+
+@lisp
+(flexi-first? elem1) ; => #t
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-last? element
+Returns @code{#t} if @var{element} is at the last position in its flexichain.
+
+@lisp
+(flexi-last? elem1) ; => #f (assuming more elements exist)
+@end lisp
+@end deffn
+
+@subsection Navigation Methods
+
+@deffn {Generic Function} flexi-next element
+Returns the element immediately after @var{element} in the flexichain. Raises an error if @var{element} is the last element.
+
+@lisp
+(define next-elem (flexi-next elem1))
+@end lisp
+@end deffn
+
+@deffn {Generic Function} flexi-prev element
+Returns the element immediately before @var{element} in the flexichain. Raises an error if @var{element} is the first element.
+
+@lisp
+(define prev-elem (flexi-prev elem2))
+@end lisp
+@end deffn
+
+@node Ranked Gapbuffer, Navigation Methods, Element Rank Mixin, Ranked Elements
+@comment  node-name,  next,  previous,  up
+@section Ranked Gapbuffer
+@cindex Ranked Gapbuffer
+
+@deftp {Class} <ranked-gapbuffer>
+A specialized gapbuffer that automatically manages element ranks when elements implement the @code{<element-rank-mixin>}.
+@end deftp
+
+@deffn {Function} make-ranked-gapbuffer @t{#!key} (initial-capacity 0) (fill #\_) (min-capacity 5) (expand-factor 1.5)
+Creates a new ranked gapbuffer that automatically updates element positions.
+
+@lisp
+(define ranked-chain (make-ranked-gapbuffer))
+@end lisp
+@end deffn
+
+@subsection Automatic Rank Management
+
+When elements that implement @code{<element-rank-mixin>} are inserted into or removed from a ranked gapbuffer, their rank information is automatically updated:
+
+@lisp
+;; Create a ranked chain
+(define chain (make-ranked-gapbuffer))
+
+;; Create ranked elements
+(define elem1 (instantiate::<text-element> 
+                (content "first")
+                (index 0)
+                (chain chain)))
+(define elem2 (instantiate::<text-element> 
+                (content "second")
+                (index 1)
+                (chain chain)))
+
+;; Insert elements
+(flexi-insert! chain 0 elem1)
+(flexi-insert! chain 1 elem2)
+
+;; Ranks are automatically maintained
+(rank elem1) ; => 0
+(rank elem2) ; => 1
+
+;; Insert between them
+(define elem-middle (instantiate::<text-element> 
+                      (content "middle")
+                      (index 1)
+                      (chain chain)))
+(flexi-insert! chain 1 elem-middle)
+
+;; All ranks are automatically updated
+(rank elem1)       ; => 0
+(rank elem-middle) ; => 1  
+(rank elem2)       ; => 2
+@end lisp
+
+@node Navigation Methods, , Ranked Gapbuffer, Ranked Elements
+@comment  node-name,  next,  previous,  up
+@section Navigation Methods
+@cindex Navigation Methods
+
+Ranked elements provide convenient navigation methods that work directly with the element objects rather than positions.
+
+@subsection Example Usage
+
+@lisp
+;; Create a document with ranked paragraphs
+(define-class <paragraph>::<element-rank-mixin>
+   text::string)
+
+(define doc (make-ranked-gapbuffer))
+
+(define para1 (instantiate::<paragraph> 
+                (text "First paragraph")
+                (index 0)
+                (chain doc)))
+(define para2 (instantiate::<paragraph> 
+                (text "Second paragraph")
+                (index 1)
+                (chain doc)))
+(define para3 (instantiate::<paragraph> 
+                (text "Third paragraph")
+                (index 2)
+                (chain doc)))
+
+(flexi-insert! doc 0 para1)
+(flexi-insert! doc 1 para2)
+(flexi-insert! doc 2 para3)
+
+;; Navigate through paragraphs
+(define current para2)
+(define prev-para (flexi-prev current))  ; => para1
+(define next-para (flexi-next current))  ; => para3
+
+;; Check positions
+(flexi-first? para1) ; => #t
+(flexi-last? para3)  ; => #t
+(rank para2)         ; => 1
+@end lisp
+
+@subsection Performance Considerations
+
+Ranked elements provide O(1) navigation between adjacent elements, making them very efficient for sequential access patterns common in text processing and document manipulation applications.

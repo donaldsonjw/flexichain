@@ -1,0 +1,13 @@
+#|
+flexichain  
+
+Copyright 2024, Joseph Donaldson
+
+|#
+
+(declare-library! 'flexichain 
+   :version "@VERSION@"
+   :srfi '(flexichain)
+   :basename "flexichain"
+   :module-eval 'flexichain_make_lib)
+

@@ -1,0 +1,251 @@
+@node Cursor Types, Cursor Operations, Cursors, Cursors
+@comment  node-name,  next,  previous,  up
+@section Cursor Types
+@cindex Cursor Types
+
+flexichain provides cursors that maintain their position in the sequence even as elements are inserted or deleted around them.
+
+@deftp {Abstract Class} <cursor>
+Base class for all cursor types. Cursors provide a movable position within a flexichain.
+@end deftp
+
+@deftp {Class} <flexicursor>
+Base flexicursor class that tracks position within a flexichain using internal indices.
+
+@table @var
+@item chain
+The flexichain this cursor is associated with
+@item index
+Internal index position (not directly accessible)
+@end table
+@end deftp
+
+@deftp {Class} <left-sticky-flexicursor>
+A cursor that "sticks" to the left when elements are inserted at its position. When an element is inserted at the cursor's position, the cursor remains before the new element.
+
+@lisp
+(module example-left-sticky (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "a")
+(define cursor (make-left-sticky-flexicursor chain :position 1))
+(flexi-insert! chain 1 "b")  ; Insert at cursor position
+(cursor-pos cursor) ; => 1 (cursor stayed before "b")
+@end lisp
+@end deftp
+
+@deftp {Class} <right-sticky-flexicursor>
+A cursor that "sticks" to the right when elements are inserted at its position. When an element is inserted at the cursor's position, the cursor moves after the new element.
+
+@lisp
+(module example-right-sticky (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert! chain 0 "a")
+(define cursor (make-right-sticky-flexicursor chain :position 1))
+(flexi-insert! chain 1 "b")  ; Insert at cursor position
+(cursor-pos cursor) ; => 2 (cursor moved after "b")
+@end lisp
+@end deftp
+
+@node Cursor Operations, Cursor Chains, Cursor Types, Cursors
+@comment  node-name,  next,  previous,  up
+@section Cursor Operations
+@cindex Cursor Operations
+
+@subsection Cursor Construction
+
+@deffn {Function} make-left-sticky-flexicursor chain @t{#!key} (position 0)
+Creates a new left-sticky cursor for @var{chain} at @var{position}.
+
+@lisp
+(module example-cursor-construction (library flexichain))
+
+(define chain (make-gapbuffer))
+(flexi-insert-vector! chain 0 #("a" "b" "c"))
+(define cursor (make-left-sticky-flexicursor chain :position 1))
+@end lisp
+@end deffn
+
+@deffn {Function} make-right-sticky-flexicursor chain @t{#!key} (position 0)
+Creates a new right-sticky cursor for @var{chain} at @var{position}.
+
+@lisp
+(module example-right-cursor-construction (library flexichain))
+
+(define cursor (make-right-sticky-flexicursor chain :position 2))
+@end lisp
+@end deffn
+
+@subsection Position Management
+
+@deffn {Generic Function} cursor-pos cursor
+Returns the current position of @var{cursor} in its associated flexichain.
+
+@lisp
+(module example-cursor-pos (library flexichain))
+
+(define cursor (make-left-sticky-flexicursor chain :position 1))
+(cursor-pos cursor) ; => 1
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-pos-set! cursor position
+Sets the position of @var{cursor} to @var{position}.
+
+@lisp
+(module example-cursor-pos-set (library flexichain))
+
+(cursor-pos-set! cursor 3)
+(cursor-pos cursor) ; => 3
+@end lisp
+@end deffn
+
+@subsection Movement Operations
+
+@deffn {Generic Function} cursor-move> cursor n
+Moves @var{cursor} forward by @var{n} positions (or 1 if @var{n} is 0).
+
+@lisp
+(cursor-move> cursor 2)  ; Move forward 2 positions
+(cursor-move> cursor 0)  ; Move forward 1 position
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-move< cursor n
+Moves @var{cursor} backward by @var{n} positions (or 1 if @var{n} is 0).
+
+@lisp
+(cursor-move< cursor 1)  ; Move backward 1 position
+@end lisp
+@end deffn
+
+@subsection Boundary Testing
+
+@deffn {Generic Function} cursor-at-beginning? cursor
+Returns @code{#t} if @var{cursor} is at the beginning of its flexichain.
+
+@lisp
+(cursor-pos-set! cursor 0)
+(cursor-at-beginning? cursor) ; => #t
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-at-end? cursor
+Returns @code{#t} if @var{cursor} is at the end of its flexichain.
+
+@lisp
+(cursor-pos-set! cursor (flexi-length chain))
+(cursor-at-end? cursor) ; => #t
+@end lisp
+@end deffn
+
+@subsection Element Access and Modification
+
+@deffn {Generic Function} cursor-ref< cursor
+Returns the element immediately before @var{cursor}. Raises an error if cursor is at the beginning.
+
+@lisp
+(cursor-pos-set! cursor 2)
+(cursor-ref< cursor) ; Returns element at position 1
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-ref> cursor
+Returns the element immediately after @var{cursor}. Raises an error if cursor is at the end.
+
+@lisp
+(cursor-ref> cursor) ; Returns element at cursor position
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-set<! cursor item
+Sets the element immediately before @var{cursor} to @var{item}.
+
+@lisp
+(cursor-set<! cursor "new-value")
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-set>! cursor item
+Sets the element immediately after @var{cursor} to @var{item}.
+
+@lisp
+(cursor-set>! cursor "new-value")
+@end lisp
+@end deffn
+
+@subsection Insertion and Deletion
+
+@deffn {Generic Function} cursor-insert! cursor item
+Inserts @var{item} at the cursor's position.
+
+@lisp
+(cursor-insert! cursor "inserted")
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-delete<! cursor n
+Deletes @var{n} elements (or 1 if @var{n} is 0) before the cursor.
+
+@lisp
+(cursor-delete<! cursor 2)  ; Delete 2 elements before cursor
+@end lisp
+@end deffn
+
+@deffn {Generic Function} cursor-delete>! cursor n
+Deletes @var{n} elements (or 1 if @var{n} is 0) after the cursor.
+
+@lisp
+(cursor-delete>! cursor 1)  ; Delete 1 element after cursor
+@end lisp
+@end deffn
+
+@subsection Cursor Cloning
+
+@deffn {Generic Function} cursor-clone cursor
+Creates a copy of @var{cursor} at the same position.
+
+@lisp
+(define cursor2 (cursor-clone cursor))
+(= (cursor-pos cursor) (cursor-pos cursor2)) ; => #t
+@end lisp
+@end deffn
+
+@node Cursor Chains, , Cursor Operations, Cursors
+@comment  node-name,  next,  previous,  up
+@section Cursor Chains
+@cindex Cursor Chains
+
+@deftp {Class} <cursorchain>
+A specialized flexichain that automatically manages cursors using weak pointers for garbage collection.
+
+@table @var
+@item cursors
+List of weak pointers to cursors associated with this chain
+@end table
+@end deftp
+
+@deffn {Function} make-cursorchain @t{#!key} (initial-capacity 0) (fill #\_) (min-capacity 5) (expand-factor 1.5)
+Creates a new cursorchain with automatic cursor management.
+
+@lisp
+(define chain (make-cursorchain))
+@end lisp
+@end deffn
+
+@deffn {Function} make-cursorchain-left-cursor chain @t{#!key} (position 0)
+Creates a left-sticky cursor for @var{chain} and automatically registers it for weak pointer management.
+
+@lisp
+(define cursor (make-cursorchain-left-cursor chain :position 1))
+@end lisp
+@end deffn
+
+@deffn {Function} make-cursorchain-right-cursor chain @t{#!key} (position 0)
+Creates a right-sticky cursor for @var{chain} and automatically registers it for weak pointer management.
+
+@lisp
+(define cursor (make-cursorchain-right-cursor chain :position 1))
+@end lisp
+@end deffn
