@@ -64,16 +64,24 @@ Returns @code{#t} if @var{element} is at the last position in its flexichain.
 Returns the element immediately after @var{element} in the flexichain. Raises an error if @var{element} is the last element.
 
 @lisp
+(module example-flexi-next (library flexichain))
+
 (define next-elem (flexi-next elem1))
 @end lisp
+
+Raises @code{&flexi-navigation-error} if @var{element} is the last element in the flexichain.
 @end deffn
 
 @deffn {Generic Function} flexi-prev element
 Returns the element immediately before @var{element} in the flexichain. Raises an error if @var{element} is the first element.
 
 @lisp
+(module example-flexi-prev (library flexichain))
+
 (define prev-elem (flexi-prev elem2))
 @end lisp
+
+Raises @code{&flexi-navigation-error} if @var{element} is the first element in the flexichain.
 @end deffn
 
 @node Ranked Gapbuffer, Navigation Methods, Element Rank Mixin, Ranked Elements

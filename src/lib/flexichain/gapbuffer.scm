@@ -108,7 +108,7 @@
          ((?- ?p ?v)
           (e `(begin (set! ,p (+ ,p ,v)) ,p) e))
          (else
-          (error "inc!" "invalid form" x)))))
+          (raise-flexi-incompatible-type-error :proc "inc!" :element x :msg "invalid form")))))
 
 (define-expander dec!
    (lambda (x e)
@@ -118,7 +118,7 @@
          ((?- ?p ?v)
           (e `(begin (set! ,p (- ,p ,v)) ,p) e))
          (else
-          (error "dec!" "invalid form" x)))))
+          (raise-flexi-incompatible-type-error :proc "dec!" :element x :msg "invalid form")))))
 
 (define-expander with-virtual-gap
    (lambda (x e)
@@ -134,7 +134,7 @@
                        (when (< ,ge ,ds) (inc! ,ge ,bl))
                        ,@body)) e))
          (else
-          (error "with-virtual-gap" "invalid form" x)))))
+          (raise-flexi-incompatible-type-error :proc "with-virtual-gap" :element x :msg "invalid form")))))
 
 (define-method (flexi-length chain::<gapbuffer>)
    (with-virtual-gap (bl ds gs ge) chain
@@ -501,7 +501,7 @@
                           (begin ,@body  (,l (+ ,i 1))))
                       #unspecified) e)))
          (else
-          (error "dotimes" "invalid form" x)))))
+          (raise-flexi-incompatible-type-error :proc "dotimes" :element x :msg "invalid form")))))
 
 (define (box str #!optional (start #t) (end #t))
    (let ((len (string-length str)))
@@ -555,8 +555,7 @@
                 (+ i 1)))))  
    (define (print-box-top width)
       (if (<= width 2)
-          (error " print-box-top" "invalid width; width must be greater than or equal to 2"
-             width)
+          (raise-flexi-incompatible-type-error :proc "print-box-top" :element width :msg "invalid width; width must be greater than or equal to 2")
           (begin
              (printf "~a" "┏")
              

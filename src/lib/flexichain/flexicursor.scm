@@ -1,7 +1,8 @@
 (module flexichain.flexicursor
    (import flexichain.cursor
            flexichain.flexichain
-           flexichain.gapbuffer)
+           flexichain.gapbuffer
+           flexichain.exceptions)
    (static
       (class <flexicursor>::<cursor>
          chain::<flexichain>
@@ -92,25 +93,25 @@
    (let ((pos (cursor-pos cursor)))
       (if (> pos 0)
           (flexi-ref (-> cursor chain) (- pos 1))
-          (error "cursor-ref<" "cursor at beginning" cursor))))
+          (raise-flexi-cursor-error :proc "cursor-ref<" :cursor cursor :msg "cursor at beginning"))))
 
 (define-method (cursor-set<! cursor::<flexicursor> item::obj)
    (let ((pos (cursor-pos cursor)))
       (if (> pos 0)
           (flexi-set! (-> cursor chain) (- pos 1) item)
-          (error "cursor-set<!" "cursor at beginning" cursor))))
+          (raise-flexi-cursor-error :proc "cursor-set<!" :cursor cursor :msg "cursor at beginning"))))
 
 (define-method (cursor-ref> cursor::<flexicursor>)
    (let ((pos (cursor-pos cursor)))
       (if (< pos (flexi-length (-> cursor chain)))
           (flexi-ref (-> cursor chain) pos)
-          (error "cursor-ref>" "cursor at end" cursor))))
+          (raise-flexi-cursor-error :proc "cursor-ref>" :cursor cursor :msg "cursor at end"))))
 
 (define-method (cursor-set>! cursor::<flexicursor> item::obj)
    (let ((pos (cursor-pos cursor)))
       (if (< pos (flexi-length (-> cursor chain)))
           (flexi-set! (-> cursor chain) pos item)
-          (error "cursor-set>!" "cursor at end" cursor))))
+          (raise-flexi-cursor-error :proc "cursor-set>!" :cursor cursor :msg "cursor at end"))))
 
 (define-method (cursor-clone cursor::<left-sticky-flexicursor>)
    (make-left-sticky-flexicursor (-> cursor chain) :position (cursor-pos cursor)))

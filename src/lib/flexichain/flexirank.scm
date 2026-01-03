@@ -1,6 +1,7 @@
 (module flexichain.flexirank
    (import flexichain.flexichain
-           flexichain.gapbuffer)
+           flexichain.gapbuffer
+           flexichain.exceptions)
    (export
       (abstract-class <element-rank-mixin>
          index::long
@@ -35,13 +36,13 @@
    (let ((pos (rank element)))
       (if (< pos (- (flexi-length (-> element chain)) 1))
           (flexi-ref (-> element chain) (+ pos 1))
-          (error "flexi-next" "element is last" element))))
+          (raise-flexi-navigation-error :proc "flexi-next" :element element :msg "element is last"))))
 
 (define-method (flexi-prev element::<element-rank-mixin>)
    (let ((pos (rank element)))
       (if (> pos 0)
           (flexi-ref (-> element chain) (- pos 1))
-          (error "flexi-prev" "element is first" element))))
+          (raise-flexi-navigation-error :proc "flexi-prev" :element element :msg "element is first"))))
 
 ;; Constructor
 (define (make-ranked-gapbuffer #!key (initial-capacity 0) (fill #\_)

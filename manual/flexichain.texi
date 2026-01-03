@@ -123,7 +123,7 @@ The key advantages of flexichain over traditional vectors or lists are:
 @item
 @strong{Ranked elements}: Optional support for elements that know their position in the sequence
 @item
-@strong{Type safety}: Full integration with Bigloo's type system and error handling
+@strong{Type safety}: Full integration with Bigloo's type system and comprehensive error handling
 @end itemize
 
 @section Basic Usage

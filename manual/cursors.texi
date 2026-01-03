@@ -146,33 +146,49 @@ Returns @code{#t} if @var{cursor} is at the end of its flexichain.
 Returns the element immediately before @var{cursor}. Raises an error if cursor is at the beginning.
 
 @lisp
+(module example-cursor-ref-left (library flexichain))
+
 (cursor-pos-set! cursor 2)
 (cursor-ref< cursor) ; Returns element at position 1
 @end lisp
+
+Raises @code{&flexi-cursor-error} if the cursor is at the beginning of the flexichain.
 @end deffn
 
 @deffn {Generic Function} cursor-ref> cursor
 Returns the element immediately after @var{cursor}. Raises an error if cursor is at the end.
 
 @lisp
+(module example-cursor-ref-right (library flexichain))
+
 (cursor-ref> cursor) ; Returns element at cursor position
 @end lisp
+
+Raises @code{&flexi-cursor-error} if the cursor is at the end of the flexichain.
 @end deffn
 
 @deffn {Generic Function} cursor-set<! cursor item
 Sets the element immediately before @var{cursor} to @var{item}.
 
 @lisp
+(module example-cursor-set-left (library flexichain))
+
 (cursor-set<! cursor "new-value")
 @end lisp
+
+Raises @code{&flexi-cursor-error} if the cursor is at the beginning of the flexichain.
 @end deffn
 
 @deffn {Generic Function} cursor-set>! cursor item
 Sets the element immediately after @var{cursor} to @var{item}.
 
 @lisp
+(module example-cursor-set-right (library flexichain))
+
 (cursor-set>! cursor "new-value")
 @end lisp
+
+Raises @code{&flexi-cursor-error} if the cursor is at the end of the flexichain.
 @end deffn
 
 @subsection Insertion and Deletion

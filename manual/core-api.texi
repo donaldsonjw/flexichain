@@ -183,7 +183,7 @@ Creates a new gapbuffer containing the elements from @var{list}.
 @section Error Handling
 @cindex Error Handling
 
-flexichain provides specific error types for different failure conditions.
+flexichain provides specific error types for different failure conditions, ensuring consistent and type-safe error handling throughout the library.
 
 @deftp {Exception} &flexi-position-error
 Raised when an invalid position is accessed or specified.
@@ -217,5 +217,34 @@ Raised when an operation receives an incompatible type.
 
 ;; This will raise &flexi-incompatible-type-error:
 (flexi-insert-vector! chain 0 "not-a-vector")
+@end lisp
+@end deftp
+
+@deftp {Exception} &flexi-cursor-error
+Raised when a cursor operation fails due to invalid cursor state.
+
+@lisp
+(module example-cursor-error (library flexichain))
+
+(define chain (make-gapbuffer))
+(define cursor (make-left-sticky-flexicursor chain :position 0))
+;; This will raise &flexi-cursor-error:
+(cursor-ref< cursor)  ; cursor at beginning
+@end lisp
+@end deftp
+
+@deftp {Exception} &flexi-navigation-error
+Raised when ranked element navigation fails.
+
+@lisp
+(module example-navigation-error (library flexichain))
+
+(define ranked-chain (make-ranked-gapbuffer))
+(define-class <test-element>::<element-rank-mixin> content::string)
+(define elem (instantiate::<test-element> 
+               (content "first") (index 0) (chain ranked-chain)))
+(flexi-insert! ranked-chain 0 elem)
+;; This will raise &flexi-navigation-error:
+(flexi-prev elem)  ; element is first
 @end lisp
 @end deftp

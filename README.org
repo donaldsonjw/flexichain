@@ -42,6 +42,8 @@ flexichain provides the following main components:
 - =&flexi-position-error= - Invalid position errors
 - =&flexi-initialization-error= - Construction errors
 - =&flexi-incompatible-type-error= - Type mismatch errors
+- =&flexi-cursor-error= - Cursor operation errors
+- =&flexi-navigation-error= - Ranked element navigation errors
 
 ** Building
 :PROPERTIES:
