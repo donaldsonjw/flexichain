@@ -24,6 +24,7 @@
 
 (define-method (move-elements chain::<cursorchain> to::vector from::vector
                   start1::long start2::long end2::long)
+   (call-next-method)
    (set! (-> chain cursors) (adjust-cursors! (-> chain cursors) start2 (- end2 1) (- start1 start2))))
 
 ;; Create cursors with weak pointer management

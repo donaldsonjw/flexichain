@@ -284,4 +284,92 @@
       (test-equal "elem4 rank after set" 1 (rank elem4))
       (test-equal "elem1 next is now elem4" elem4 (flexi-next elem1))))
 
+;; Cursorchain bug fix tests
+(test-group "Cursorchain bug fixes"
+   ;; Test 1: Weak pointer dereferencing during buffer reorganization
+   (let* ((cc (make-cursorchain))
+          (cursor (make-cursorchain-right-cursor cc :position 0)))
+      ;; Insert enough elements to trigger gap buffer reorganization
+      (let loop ((i 0))
+         (when (< i 20)
+            (cursor-insert! cursor (integer->char (+ 65 (modulo i 26))))
+            (loop (+ i 1))))
+      
+      (test-equal "buffer length after 20 inserts" 20 (flexi-length cc))
+      (test-equal "cursor position after 20 inserts" 20 (cursor-pos cursor)))
+   
+   ;; Test 2: move-elements calls parent method
+   (let* ((cc (make-cursorchain))
+          (cursor (make-cursorchain-right-cursor cc :position 0)))
+      (cursor-insert! cursor #\H)
+      (cursor-insert! cursor #\e)
+      (cursor-insert! cursor #\l)
+      (cursor-insert! cursor #\l)
+      (cursor-insert! cursor #\o)
+      
+      (let ((content (let loop ((i 0) (chars '()))
+                        (if (< i (flexi-length cc))
+                            (loop (+ i 1) (cons (flexi-ref cc i) chars))
+                            (list->string (reverse chars))))))
+         (test-equal "buffer content after inserts" "Hello" content)))
+   
+   ;; Test 3: Cursor positions remain correct after reorganization
+   (let* ((cc (make-cursorchain))
+          (cursor1 (make-cursorchain-right-cursor cc :position 0))
+          (cursor2 (make-cursorchain-left-cursor cc :position 0)))
+      
+      (cursor-insert! cursor1 #\A)
+      (cursor-insert! cursor1 #\B)
+      (cursor-insert! cursor1 #\C)
+      
+      (test-equal "cursor1 position after 3 inserts" 3 (cursor-pos cursor1))
+      (test-equal "cursor2 position after 3 inserts" 0 (cursor-pos cursor2))
+      
+      ;; Insert many more to trigger reorganization
+      (let loop ((i 0))
+         (when (< i 50)
+            (cursor-insert! cursor1 (integer->char (+ 65 (modulo i 26))))
+            (loop (+ i 1))))
+      
+      (test-equal "cursor1 position after 50 more inserts" 53 (cursor-pos cursor1))
+      (test-equal "cursor2 position after 50 more inserts" 0 (cursor-pos cursor2))
+      (test-equal "buffer length" 53 (flexi-length cc)))
+   
+   ;; Test 4: Cursor deletion operations
+   (let* ((cc (make-cursorchain))
+          (cursor (make-cursorchain-right-cursor cc :position 0)))
+      
+      ;; Insert text
+      (let loop ((chars (string->list "Hello World")))
+         (unless (null? chars)
+            (cursor-insert! cursor (car chars))
+            (loop (cdr chars))))
+      
+      (test-equal "cursor position after insert" 11 (cursor-pos cursor))
+      
+      ;; Move cursor back and delete
+      (cursor-move< cursor 6)
+      (test-equal "cursor position after move" 5 (cursor-pos cursor))
+      
+      (cursor-delete<! cursor 1)
+      (test-equal "cursor position after delete" 4 (cursor-pos cursor))
+      
+      ;; Verify content
+      (let ((content (let loop ((i 0) (chars '()))
+                        (if (< i (flexi-length cc))
+                            (loop (+ i 1) (cons (flexi-ref cc i) chars))
+                            (list->string (reverse chars))))))
+         (test-equal "buffer content after deletion" "Hell World" content)))
+   
+   ;; Test 5: Right-sticky vs left-sticky behavior
+   (let* ((cc (make-cursorchain))
+          (left-cursor (make-cursorchain-left-cursor cc :position 0))
+          (right-cursor (make-cursorchain-right-cursor cc :position 0)))
+      
+      ;; Insert at position 0
+      (flexi-insert! cc 0 #\X)
+      
+      (test-equal "left-sticky cursor stays before insert" 0 (cursor-pos left-cursor))
+      (test-equal "right-sticky cursor moves after insert" 1 (cursor-pos right-cursor))))
+
 (test-end "flexichain-test")

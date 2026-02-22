@@ -25,27 +25,32 @@
                                                (index index))))
 
 ;; Adjust cursor positions when elements are moved
+;; Adjust cursor positions when elements are moved
 (define (adjust-cursors! cursors::pair-nil start::long end::long increment::long)
    (let ((acc '()))
       (let loop ((cursors cursors))
          (if (null? cursors)
              acc
-             (let ((cursor (car cursors)))
-                (cond ((and (<= start (with-access::<flexicursor> cursor (index) index))
-                           (<= (with-access::<flexicursor> cursor (index) index) end))
-                       ;; Cursor is in the affected range, adjust its index
-                       (with-access::<flexicursor> cursor (index)
-                          (set! index (+ index increment)))
-                       (let ((rest (cdr cursors)))
-                          (set-cdr! cursors acc)
-                          (set! acc cursors)
-                          (loop rest)))
-                      (else
-                       ;; Cursor is not affected, keep it
-                       (let ((rest (cdr cursors)))
-                          (set-cdr! cursors acc)
-                          (set! acc cursors)
-                          (loop rest)))))))))
+             (let* ((weakptr (car cursors))
+                    (cursor (weakptr-data weakptr)))
+                (if (not cursor)
+                    ;; Weak pointer was GC'd, skip it
+                    (loop (cdr cursors))
+                    (let ((cursor-index (with-access::<flexicursor> cursor (index) index)))
+                       (cond ((and (<= start cursor-index) (<= cursor-index end))
+                              ;; Cursor is in the affected range, adjust its index
+                              (with-access::<flexicursor> cursor (index)
+                                 (set! index (+ index increment)))
+                              (let ((rest (cdr cursors)))
+                                 (set-cdr! cursors acc)
+                                 (set! acc cursors)
+                                 (loop rest)))
+                             (else
+                              ;; Cursor is not affected, keep it
+                              (let ((rest (cdr cursors)))
+                                 (set-cdr! cursors acc)
+                                 (set! acc cursors)
+                                 (loop rest)))))))))))
 
 ;; Cursor method implementations
 (define-method (cursor-pos cursor::<left-sticky-flexicursor>)
